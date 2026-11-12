@@ -89,7 +89,7 @@ fig, axes = plt.subplots(3, 2, figsize=(13, 10))
 course(axes[0, 0], "radiation 6 Gy", ["D"], ["double-strand breaks"], "breaks per cell", "6 Gy: saturable repair of DNA breaks")
 course(axes[0, 1], "oligomycin", ["q_glc", "q_lac", "q_o2"], ["glucose uptake", "lactate secretion", "O₂ uptake"], "mmol/gDW/h", "Oligomycin: shift to glycolysis")
 course(axes[1, 0], "tunicamycin", ["U", "isr"], ["unfolded-protein load", "integrated stress response"], "relative", "Tunicamycin: ER stress and the ISR")
-course(axes[1, 1], "tunicamycin", ["p:HSPA5", "p:ATF4", "p:DDIT3"], ["BiP (HSPA5)", "ATF4", "CHOP (DDIT3)"], "concentration (start = 1)", "Tunicamycin: stress-gene induction", norm="start")
+course(axes[1, 1], "tunicamycin", ["p:HSPA5"], ["BiP (HSPA5) protein"], "concentration (start = 1)", "Tunicamycin: chaperone induction", norm="start")
 course(axes[2, 0], "paclitaxel", ["C"], ["caspase activation"], "fraction", "Paclitaxel: mitotic arrest, then apoptosis")
 course(axes[2, 1], "no leucine", ["mu", "mu_cap"], ["realised growth", "metabolic capacity"], "1/h", "Leucine withdrawal: supply-limited growth")
 for ax in axes[-1]: ax.set_xlabel("time (h); dotted line = perturbation")
@@ -122,8 +122,11 @@ pd.DataFrame(out)
 # MEK inhibition mainly represses replication and proliferation genes (MCMs, geminin, CDCA family), the
 # signature of the G1 arrest it causes. Tunicamycin induces recognised unfolded-protein-response and ISR genes
 # (DNAJB9, SERP1, aminoacyl-tRNA synthetases). Fold changes are smaller than measured ones (often 5–20× for the
-# strongest targets) because regulatory strengths are mostly uniform rather than fitted. This is the model's
-# main quantitative weakness and the clearest place to learn weights from perturbation data.
+# strongest targets) for all but ~50 curated direct targets, because regulatory strengths are otherwise uniform
+# rather than fitted. This is the model's main quantitative weakness and the clearest place to learn weights
+# from perturbation data. A specific known miss: ATF4 and CHOP *protein* fall under ER stress in the model,
+# because their stress-induced translation (upstream open reading frames) is not represented; their
+# transcriptional activity is set by the stress module instead.
 #
 # ## Dose–response
 

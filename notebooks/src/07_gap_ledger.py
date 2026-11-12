@@ -42,7 +42,7 @@ print(f"expressed genes: {expressed:,}; with a modelled function: {fun:,} ({fun 
 # %%
 P_ = [
  ("Transcription, mRNA decay", "all genes, stochastic", "one rate per gene; no bursting kinetics, promoters, chromatin states, splicing isoforms, miRNA"),
- ("Translation, protein turnover", "all genes, stochastic", "one rate per gene; no codon-level elongation, no co-translational folding; 2/3 of half-lives are defaults"),
+ ("Translation, protein turnover", "all genes, stochastic", "one rate per gene; no codon-level elongation, no uORF/IRES control (ATF4, CHOP), no co-translational folding; 2/3 of half-lives are defaults"),
  ("Molecular machines", f"{len(MACHINES)} curated machines, ~930 genes", "capacity = scarcest subunit with a reserve; no assembly kinetics; composition hand-curated"),
  ("Metabolism", "Human-GEM, 12.7k reactions, 8 compartments", "steady-state fluxes; no metabolite concentrations or allostery; apparent kcat inferred; FBA too permissive (glucose-free growth, methotrexate)"),
  ("Signalling", "5.1k proteins, 14.5k signed edges", "logic-level; uniform weights except a 208-edge backbone; no receptor trafficking, no spatial gradients"),
