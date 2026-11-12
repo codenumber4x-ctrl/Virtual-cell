@@ -37,7 +37,7 @@ ENSG00000003147,ICA1,True,False,False,False,False,False,False
 ENSG00000003249,DBNDD1,True,False,False,False,False,False,False
 ENSG00000003393,ALS2,True,False,False,False,False,False,False
 ENSG00000003400,CASP10,True,False,False,True,False,False,True
-ENSG00000003402,CFLAR,True,False,False,True,False,False,True
+ENSG00000003402,CFLAR,True,False,False,True,False,True,True
 ENSG00000003436,TFPI,True,False,False,True,False,False,True
 ENSG00000003509,NDUFAF7,True,False,False,False,False,False,False
 ENSG00000003756,RBM5,True,False,False,False,False,False,False
@@ -449,7 +449,7 @@ ENSG00000025772,TOMM34,True,False,False,False,False,False,False
 ENSG00000025796,SEC63,True,False,True,True,False,False,True
 ENSG00000025800,KPNA6,True,True,True,False,False,False,True
 ENSG00000026025,VIM,True,False,False,True,False,False,True
-ENSG00000026103,FAS,True,False,False,True,False,False,True
+ENSG00000026103,FAS,True,False,False,True,False,True,True
 ENSG00000026297,RNASET2,True,False,False,False,False,False,False
 ENSG00000026508,CD44,True,False,False,True,False,False,True
 ENSG00000026559,KCNG1,True,False,False,False,False,False,False
@@ -861,7 +861,7 @@ ENSG00000063660,GPC1,True,False,False,True,False,False,True
 ENSG00000063761,ADCK1,True,False,False,False,False,False,False
 ENSG00000063854,HAGH,True,True,False,False,False,False,True
 ENSG00000063978,RNF4,True,False,False,True,False,False,True
-ENSG00000064012,CASP8,True,False,False,True,False,False,True
+ENSG00000064012,CASP8,True,False,False,True,False,True,True
 ENSG00000064042,LIMCH1,True,False,False,False,False,False,False
 ENSG00000064102,INTS13,True,False,False,False,False,False,False
 ENSG00000064115,TM7SF3,True,False,False,False,False,False,False
@@ -994,7 +994,7 @@ ENSG00000067113,PLPP1,True,True,False,False,False,False,True
 ENSG00000067141,NEO1,False,False,False,True,False,False,True
 ENSG00000067167,TRAM1,True,False,False,False,False,False,False
 ENSG00000067177,PHKA1,True,True,False,True,False,False,True
-ENSG00000067182,TNFRSF1A,True,False,False,True,False,False,True
+ENSG00000067182,TNFRSF1A,True,False,False,True,False,True,True
 ENSG00000067191,CACNB1,True,False,False,False,False,False,False
 ENSG00000067208,EVI5,True,False,False,True,False,False,True
 ENSG00000067221,STOML1,True,False,False,False,False,False,False
@@ -2919,7 +2919,7 @@ ENSG00000104660,LEPROTL1,True,False,False,False,False,False,False
 ENSG00000104671,DCTN6,True,False,False,True,False,False,True
 ENSG00000104679,R3HCC1,True,False,False,False,False,False,False
 ENSG00000104687,GSR,True,True,True,True,False,False,True
-ENSG00000104689,TNFRSF10A,True,False,False,True,False,False,True
+ENSG00000104689,TNFRSF10A,True,False,False,True,False,True,True
 ENSG00000104691,UBXN8,True,False,False,True,False,False,True
 ENSG00000104695,PPP2CB,True,False,False,True,False,False,True
 ENSG00000104714,ERICH1,True,False,False,False,False,False,False
@@ -5054,7 +5054,7 @@ ENSG00000120860,WASHC3,True,False,False,False,False,False,False
 ENSG00000120868,APAF1,True,False,True,True,False,False,True
 ENSG00000120875,DUSP4,True,False,False,True,False,False,True
 ENSG00000120885,CLU,True,False,False,True,False,False,True
-ENSG00000120889,TNFRSF10B,True,False,False,True,False,False,True
+ENSG00000120889,TNFRSF10B,True,False,False,True,False,True,True
 ENSG00000120896,SORBS3,True,False,False,True,False,False,True
 ENSG00000120899,PTK2B,True,False,False,True,False,False,True
 ENSG00000120903,CHRNA2,False,False,False,False,False,False,False
@@ -12039,7 +12039,7 @@ ENSG00000168028,RPSA,True,False,True,True,False,False,True
 ENSG00000168032,ENTPD3,False,True,False,False,False,False,True
 ENSG00000168036,CTNNB1,True,False,False,True,True,False,True
 ENSG00000168038,ULK4,True,False,False,False,False,False,False
-ENSG00000168040,FADD,True,False,False,True,False,False,True
+ENSG00000168040,FADD,True,False,False,True,False,True,True
 ENSG00000168056,LTBP3,True,False,False,False,False,False,False
 ENSG00000168060,NAALADL1,False,False,False,False,False,False,False
 ENSG00000168061,SAC3D1,True,False,False,False,False,False,False

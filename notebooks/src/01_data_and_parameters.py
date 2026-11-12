@@ -80,8 +80,8 @@ checks = pd.DataFrame([
 checks
 
 # %% [markdown]
-# The implied ribosome elongation rate lands in the measured range without being tuned, which means the
-# abundance, turnover and growth data are mutually consistent at the scale of the whole cell.
+# The implied elongation rate (3.9 aa/s) comes out within about 30% of the measured 5–6 aa/s without being
+# tuned, so the abundance, turnover and growth data are mutually consistent at the scale of the whole cell.
 #
 # **Reconciliation rule.** Where abundance × turnover would require more than 1,000 proteins per mRNA per hour
 # (a physical bound set by ribosome spacing), the transcript count is raised for stable proteins or the protein

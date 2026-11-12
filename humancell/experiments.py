@@ -2,6 +2,7 @@
 
 An experiment is a recipe: a list of (method_name, args, kwargs) applied to a fresh cell, e.g.
     [("run", (6,), {}), ("drug", ("trametinib",), {}), ("run", (48,), {})]
+A pseudo-step ("init", (), {...}) passes constructor arguments (seed, traits, stochastic ...).
 """
 from __future__ import annotations
 
@@ -13,9 +14,14 @@ import numpy as np
 def _run(job):
     name, recipe, kw, want = job
     from .cell import VirtualCell
+    kw = dict(kw)
+    for method, args, kwargs in recipe:
+        if method == "init":                      # per-experiment constructor arguments, e.g. seed or traits
+            kw.update(kwargs)
     c = VirtualCell(**kw)
     for method, args, kwargs in recipe:
-        getattr(c, method)(*args, **kwargs)
+        if method != "init":
+            getattr(c, method)(*args, **kwargs)
     out = dict(name=name, summary=c.summary(), frame=c.frame(), divisions=list(c.divisions),
                death=getattr(c, "death_cause", None), state=dict(c.s), exchange=dict(c.exchange))
     if "mrna" in want:

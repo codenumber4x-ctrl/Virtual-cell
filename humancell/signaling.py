@@ -56,6 +56,12 @@ HIF1A>EPAS1 VHL-|HIF1A EGLN1-|HIF1A EIF2AK3>EIF2S1 EIF2AK4>EIF2S1 EIF2AK3>NFE2L2
 CXCL12>CXCR4 CALM1>PPP3CA PPP3CA>NFATC1 CALM1>CAMK2A PLCG1>PRKCA EGFR>PLCG1 PRKCA>RAF1 SRC>STAT3 EGFR>SRC SRC>PTK2
 YAP1>TEAD1 LATS1-|YAP1 STK3>LATS1 NF2>LATS1 NOTCH1>RBPJ JAG1>NOTCH1 SHH>PTCH1 PTCH1-|SMO SMO>GLI1 SUFU-|GLI1
 """
+CORE_TARGETS = [(a, b) for a, bs in {
+    "TP53": "CDKN1A MDM2 BAX BBC3 PMAIP1 GADD45A SESN2 RRM2B", "HIF1A": "SLC2A1 HK2 LDHA PDK1 VEGFA CA9 BNIP3 PGK1",
+    "ATF4": "DDIT3 ASNS ATF3 TRIB3 SLC7A11", "NFE2L2": "HMOX1 NQO1 GCLM TXNRD1", "RELA": "NFKBIA CFLAR TNFAIP3 BIRC3",
+    "XBP1": "DNAJB9 HSPA5 SEC61B", "ATF6": "HSPA5 HSP90B1 CALR", "HSF1": "HSPA1A HSPA1B DNAJB1 HSPH1",
+    "STAT1": "IRF1 GBP1", "SMAD3": "SERPINE1 SMAD7", "FOXO3": "CDKN1B BCL2L11 GADD45A",
+}.items() for b in bs.split()]
 CORE = []
 for _tok in _CORE.split():
     if "-|" in _tok:
@@ -118,7 +124,12 @@ class Signaling:
         tg = reg["target"].map(sym2idx).values
         tf = reg["tf"].map(self.tf_pos).values
         kg = np.bincount(tg, minlength=len(genes)).astype(float)
-        self.R = sp.csr_matrix((reg["sign"].values / np.sqrt(kg[tg]), (tg, tf)), shape=(len(genes), len(self.tfs)))
+        w = reg["sign"].values / np.sqrt(kg[tg])
+        # textbook direct targets respond at full strength instead of being diluted among all annotated regulators
+        strong = set(CORE_TARGETS)
+        is_core = np.array([(a, b) in strong for a, b in zip(reg["tf"].values, reg["target"].values)])
+        w = np.where(is_core, reg["sign"].values / TARGET_GAIN, w)
+        self.R = sp.csr_matrix((w, (tg, tf)), shape=(len(genes), len(self.tfs)))
         self.tf_node = np.array([self.pos.get(t, -1) for t in self.tfs])     # signalling node of each TF
         self.tf_gene = np.array([sym2idx.get(t, -1) for t in self.tfs])      # gene row of each TF
         self.reg = reg

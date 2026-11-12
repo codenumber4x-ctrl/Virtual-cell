@@ -40,7 +40,7 @@ def respond(clamp=None, off=(), serum=None):
     for s in off: av[sig.pos[s]] = 0.03
     for _ in range(80): sig.step(av)
     act = pd.Series({r: np.log2(max(sig.activity(r), 1e-3)) for r in readouts})
-    n_genes = int((np.abs(np.log2(sig.regulation(np.ones(len(g))))) > np.log2(1.5)).sum())
+    n_genes = int((np.abs(np.log2(sig.regulation(np.ones(len(g))))) > np.log2(1.25)).sum())
     sig.a, sig.clamp = sig.a_ref.copy(), {}
     return act, n_genes
 
@@ -60,7 +60,7 @@ for i in range(M.shape[0]):
         if abs(M.values[i, j]) >= 0.3: ax.text(j, i, f"{M.values[i, j]:+.1f}", ha="center", va="center", fontsize=7, color=P.INK)
 fig.colorbar(im, ax=ax, label="log2 activity vs resting"); ax.set_title("Signalling readouts (rows) under 12 perturbations")
 plt.tight_layout(); plt.show()
-pd.Series({k: v[1] for k, v in res.items()}, name="genes whose transcription changes > 1.5×").to_frame().T
+pd.Series({k: v[1] for k, v in res.items()}, name="genes whose transcription rate changes > 1.25×").to_frame().T
 
 # %% [markdown]
 # **Reading the map.** The textbook wiring comes out with the right signs: EGF raises ERK/FOS/MYC and AKT and

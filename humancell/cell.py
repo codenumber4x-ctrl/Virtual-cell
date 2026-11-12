@@ -75,14 +75,14 @@ def _sat(x, reserve=0.6):
 class VirtualCell:
     def __init__(self, cell_line: str = "HeLa", seed: int = 0, stochastic: bool = True, dt: float = 60.0,
                  met_interval: float = 900.0, metabolism: Metabolism | None = None, signaling: Signaling | None = None,
-                 culture_gdw_per_l: float = 0.09, watch=None):
+                 culture_gdw_per_l: float = 0.09, watch=None, traits: dict | None = None):
         g = self.genes = data.build_gene_table(cell_line)
         self.cell_line = cell_line
         self.rng = np.random.default_rng(seed)
         self.stochastic = stochastic
         self.dt = dt                       # s
         self.met_interval = met_interval   # s
-        self.traits = TRAITS.get(cell_line, {})
+        self.traits = TRAITS.get(cell_line, {}) if traits is None else traits
         self.symbols = g["symbol"].values
         self.ids = g.index.values
         self.sym = {}
