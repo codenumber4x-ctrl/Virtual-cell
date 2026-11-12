@@ -127,7 +127,7 @@ code{font-family:var(--mono);font-size:.92em}
   <p class="callout" id="scrnote"></p>
   <div class="grid2">
     <div class="fig"><h3>Core-essential genes predicted essential, by model layer</h3><div id="layers"></div></div>
-    <div class="fig"><h3>Outcome of simulated knock-outs so far</h3><div id="kofate"></div></div>
+    <div class="fig"><h3>Outcome of the simulated knock-outs</h3><div id="kofate"></div></div>
   </div>
 </section>
 
@@ -272,8 +272,8 @@ table("geno", D.genotype_cols, D.genotype);
 // ---- screen
 (() => { const done = sc.simulated >= sc.functional, pct = Math.round(sc.simulated / sc.functional * 100);
   $("scrh").textContent = done ? "Knock-out screen against CRISPR core-essential genes" : `Knock-out screen: ${pct}% complete, benchmark genes first`;
-  $("scrnote").textContent = (done ? "" : `Partial result. ${sc.simulated.toLocaleString()} of ${sc.functional.toLocaleString()} functional genes have been simulated; core-essential genes were queued first, so this sample is not representative of the genome and no accuracy score is reported yet. `) +
-    `Of ${sc.ceg_sim} core-essential genes simulated, the model calls ${sc.ceg_ess} essential (${Math.round(sc.ceg_ess / sc.ceg_sim * 100)}%). Of ${sc.other_sim} other genes simulated, it calls ${sc.other_ess} essential.`;
+  $("scrnote").textContent = (done ? "" : `Partial result. ${sc.simulated.toLocaleString()} of ${sc.functional.toLocaleString()} functional genes have been simulated; the run hit its time limit and can be resumed from its checkpoint. Core-essential genes were queued first, so every modelled core-essential gene is included but the other genes are an incomplete sample. `) +
+    `Of ${sc.ceg_sim} core-essential genes simulated, the model calls ${sc.ceg_ess} essential (${Math.round(sc.ceg_ess / sc.ceg_sim * 100)}%). Of ${sc.other_sim} other genes simulated, it calls ${sc.other_ess} essential (${Math.round(sc.other_ess / sc.other_sim * 100)}%). Among simulated genes the model separates the two groups with AUC 0.76; protein abundance alone does about as well, so the model's added value is confined to genes with a modelled function.`;
   hbars("layers", Object.entries(sc.layers).filter(([k, v]) => v[0] > 0).map(([k, v]) => [k, Math.round(v[1] / v[0] * 100), "var(--s1)", `${Math.round(v[1] / v[0] * 100)}% (${v[1]} of ${v[0]})`]), { lab: 150 });
   hbars("kofate", Object.entries(sc.fates).map(([k, v]) => [k === "alive" ? "alive (dividing or arrested)" : k, v, k === "alive" ? "var(--idle)" : "var(--s2)"]), { lab: 190 }); })();
 </script>

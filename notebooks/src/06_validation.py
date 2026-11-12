@@ -93,6 +93,15 @@ conf
 # %% [markdown]
 # ## What this says
 #
+# * **The screen is incomplete, and that flatters some numbers.** It stopped at 2,400 of 6,122 functional genes
+#   (run-time limit). Benchmark genes were simulated first, so all 515 modelled core-essential genes are in, but
+#   3,722 other functional genes are not, and the tables above count them as dispensable. Among simulated genes
+#   only: 67% of core-essential genes are called essential, 18% of the other 1,885 are too, AUC 0.76. At that
+#   false-positive rate a finished screen would roughly halve the precision printed above (to about 0.25).
+#   `python run_screen.py` resumes from the checkpoint.
+# * **Abundance alone beats the model on two of three comparisons.** Core-essential genes are highly expressed
+#   and the non-essential reference set is mostly not expressed at all, so "is it abundant" scores 0.99 on the
+#   standard benchmark. The model only adds information among genes that have a modelled function.
 # * **Machines and kinetic modules carry the predictive power.** Where composition is curated (ribosome,
 #   polymerases, proteasome, replisome, spindle ...) loss of a subunit stops the cell, as in the screens.
 #   This part is knowledge encoded, as in every whole-cell model, not discovered by the simulation.

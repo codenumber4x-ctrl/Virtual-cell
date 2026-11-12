@@ -58,10 +58,26 @@ cell.frame()                                    # time course as a DataFrame; ce
 ```
 
 A simulated day takes about 6 s deterministic, 20 s stochastic, on one core.
-`python run_screen.py` runs the genome-wide knock-out screen (about 1.5 h on 4 cores).
+`python run_screen.py` runs the genome-wide knock-out screen (several hours on 4 cores; checkpointed and resumable).
 
 ## Results in brief
-RESULTS_PLACEHOLDER
+* **Unperturbed cell.** Deterministic HeLa cycle 23.3 h (G1 12.6, S 8.1, G2 3.3, M 1.0). Eight stochastic cells
+  all survive 110 h and divide every 20-22 h (s.d. 3.5-5 h).
+* **Coverage.** 12,665 genes expressed; 6,122 have a modelled function (metabolism, machine, signalling,
+  transcription factor or kinetic module). The rest are present as molecules only.
+* **51 perturbation experiments** (notebook 5). Reproduced: HeLa resistance to palbociclib and nutlin and their
+  rescue when p53/RB are restored, TNF survival vs TNF + cycloheximide apoptosis, TRAIL apoptosis, glycolytic
+  shift under oligomycin, mitotic arrest then death under paclitaxel, radiation arrest. Missed: methotrexate
+  has no effect.
+* **Knock-out screen** (notebook 6). Incomplete: 2,400 of 6,122 functional genes simulated before the run-time
+  limit; `python run_screen.py` resumes it. All 515 modelled core-essential genes (Hart CEGv2) are included:
+  344 are called essential (67%), as are 343 of the 1,885 other genes simulated (18%); none of 21 simulated
+  non-essential reference genes. AUC among simulated genes 0.76. Counting all 662 expressed core-essential
+  genes, recall is 0.52, because 147 have no modelled function.
+* **Baseline check.** Protein abundance alone separates core-essential from non-essential reference genes
+  better than the model does (AUC 0.99 vs 0.79), because the reference negatives are mostly unexpressed. The
+  model is only ahead among genes with a modelled function (0.83 vs 0.80), and that figure is optimistic
+  while the screen is incomplete.
 
 ## Known limitations (short list; full ledger in notebook 7)
 
