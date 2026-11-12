@@ -1,0 +1,279 @@
+<title>Virtual Cell Results</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* layout: a lab report. One reading column; each finding = statement, figure, what it shows. */
+:root{
+  --bg:#f7f8f6; --surface:#fcfcfb; --fg:#10130f; --muted:#555b52; --line:#dfe2db; --grid:#e9ebe6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --neutral:#eeeeea;
+  --good:#0a8a0a; --warn:#b97a00; --bad:#c93434; --idle:#7a8076;
+  --display:"Space Grotesk","IBM Plex Sans",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111410; --surface:#1a1d19; --fg:#eef0ea; --muted:#b3b9ad; --line:#30352d; --grid:#272b25;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#383b35;
+  --good:#3cc23c; --warn:#e0a52a; --bad:#e66767; --idle:#8d9488; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#111410; --surface:#1a1d19; --fg:#eef0ea; --muted:#b3b9ad; --line:#30352d; --grid:#272b25;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#383b35;
+  --good:#3cc23c; --warn:#e0a52a; --bad:#e66767; --idle:#8d9488; color-scheme:dark }
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:44px}
+h1{font-family:var(--display);font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0;font-weight:600;text-wrap:balance}
+h2{font-family:var(--display);font-size:22px;margin:0;font-weight:600;text-wrap:balance}
+h3{font-size:13px;font-weight:600;margin:0;color:var(--fg)}
+p{margin:0;max-width:68ch}
+.lede{font-size:17px;color:var(--muted)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header,section{display:flex;flex-direction:column;gap:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.stat{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.fig{background:var(--surface);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
+.legend i.sq{height:10px;width:10px;opacity:.35}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+svg text.v{fill:var(--fg);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 8px;border:1px solid var(--line);background:var(--surface);display:inline-flex;gap:6px;align-items:center}
+.chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.grp{display:flex;flex-direction:column;gap:8px}
+.grp h3 span{color:var(--muted);font-weight:400}
+.tip{position:fixed;pointer-events:none;background:var(--fg);color:var(--bg);font-size:12px;padding:5px 8px;z-index:20;max-width:260px;font-variant-numeric:tabular-nums}
+.callout{border-left:3px solid var(--warn);padding:2px 0 2px 14px;color:var(--fg)}
+ul{margin:0;padding-left:18px;max-width:70ch;display:flex;flex-direction:column;gap:6px}
+code{font-family:var(--mono);font-size:.92em}
+</style>
+<div class="wrap">
+<header>
+  <span class="eyebrow">Human whole-cell model · HeLa · run log</span>
+  <h1>A human cell simulated gene by gene: what was built and what it does</h1>
+  <p class="lede">Every protein-coding gene is transcribed, translated and degraded; metabolism, signalling, stress responses, the cell cycle and death are coupled through one shared state. These are the analyses run so far and the numbers they produced.</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<section>
+  <span class="eyebrow">Coverage</span>
+  <h2>About half of the expressed genes have a modelled function</h2>
+  <p>Each gene is counted once, at the most detailed level at which the model represents it. The rest are simulated as molecules only: made, degraded, inherited, but with no downstream effect.</p>
+  <div class="grid2">
+    <div class="fig"><h3>Genes by level of representation</h3><div id="tiers"></div></div>
+    <div class="fig"><h3>Share of per-gene inputs that are measured (expressed genes)</h3><div id="prov"></div><p class="note">Half-lives are the weak input: about two thirds fall back to a median value.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Data layer</span>
+  <h2>The assembled numbers add up to a plausible cell</h2>
+  <div class="grid2">
+    <div class="fig"><h3>Protein mass by compartment (%)</h3><div id="comp"></div></div>
+    <div class="fig"><h3>Physical consistency checks (not fitted)</h3><div class="scroll"><table id="checks"></table></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Metabolism · Human-GEM, 12,748 reactions</span>
+  <h2>Reference fluxes are pinned to measurement; responses to the medium are predictions</h2>
+  <div class="grid2">
+    <div class="fig"><h3>Reference exchange fluxes (mmol/gDW/h)</h3><div class="legend"><span><i style="background:var(--s1)"></i>uptake</span><span><i style="background:var(--s2)"></i>secretion</span></div><div id="exch"></div></div>
+    <div class="fig"><h3>Medium changes</h3><div class="scroll"><table id="medium"></table></div><p class="note">Growth without glucose is too permissive: real HeLa cells largely stop. Flux balance finds routes that cells do not use fast enough.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Signalling · 5,144 proteins, 14,475 signed interactions</span>
+  <h2>Pathway responses have the right signs; magnitudes are modest</h2>
+  <div class="fig"><h3>log2 change in activity of 16 readouts under 12 perturbations</h3>
+    <div class="legend"><span><i class="sq" style="background:var(--s1);opacity:1"></i>lower</span><span><i class="sq" style="background:var(--neutral);opacity:1"></i>unchanged</span><span><i class="sq" style="background:var(--s2);opacity:1"></i>higher</span></div>
+    <div class="scroll"><div id="heat" style="min-width:620px"></div></div></div>
+</section>
+
+<section>
+  <span class="eyebrow">Whole cell</span>
+  <h2>The coupled system grows, replicates and divides on its own</h2>
+  <p>A newborn cell left in reference medium. G1 length, doubling time and size homeostasis emerge; S, G2 and M time constants are set.</p>
+  <div class="fig"><h3>Cell size and two cyclins through four divisions (deterministic run)</h3>
+    <div class="legend" id="wtleg"></div><div id="wt"></div></div>
+  <div class="grid2">
+    <div class="fig"><h3>Eight stochastic lineages, 110 h (protein mass)</h3><div id="lin"></div></div>
+    <div class="fig"><h3 id="cych">Cell-cycle times</h3><div id="hist"></div><p class="note">HeLa doubles in about 22 h. The spread comes only from molecular noise.</p></div>
+  </div>
+  <div class="fig"><h3>Benchmarks</h3><div class="scroll"><table id="bench"></table></div></div>
+</section>
+
+<section>
+  <span class="eyebrow">In-silico experiments · 51 conditions, 72 h each</span>
+  <h2>Nutrients, ligands, radiation, drugs and knock-outs on the same cell</h2>
+  <p>Each cell grows 6 h, is perturbed, and is followed for 66 h. A drug is only a list of inhibited proteins; no experiment has its own parameters.</p>
+  <div class="fig" id="exps"></div>
+  <div class="grid2" id="courses"></div>
+  <div class="fig"><h3>Same drugs, two genotypes</h3>
+    <p class="note">HeLa carries HPV E6 (degrades p53) and E7 (inactivates RB). Repairing both lesions in the model changes the drug response.</p>
+    <div class="scroll"><table id="geno"></table></div></div>
+</section>
+
+<section>
+  <span class="eyebrow">Validation · genome-wide knock-out screen</span>
+  <h2 id="scrh">Knock-out screen against CRISPR core-essential genes</h2>
+  <p class="callout" id="scrnote"></p>
+  <div class="grid2">
+    <div class="fig"><h3>Core-essential genes predicted essential, by model layer</h3><div id="layers"></div></div>
+    <div class="fig"><h3>Outcome of simulated knock-outs so far</h3><div id="kofate"></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Limits</span>
+  <h2>What the model does not do</h2>
+  <ul>
+    <li>About half of the expressed genes have no modelled function; knocking them out changes nothing.</li>
+    <li>Signalling and regulatory strengths are set by rule, not fitted, so most transcriptional fold changes are too small.</li>
+    <li>Metabolism is steady-state flux balance: no metabolite concentrations, and it misses methotrexate and glucose dependence.</li>
+    <li>Two thirds of half-lives are defaults; module thresholds are textbook time scales, not HeLa fits.</li>
+    <li>No space, organelle dynamics, explicit phosphorylation states or epigenome. Only HeLa has been run end to end.</li>
+    <li>HeLa-specific DepMap scores could not be downloaded, so validation uses pan-cell-line core-essential genes.</li>
+  </ul>
+  <p class="note">Code and executed notebooks are on branch <code>ccr-61fe6963-tz311k</code> (<code>humancell/</code>, <code>notebooks/00–07</code>).</p>
+</section>
+</div>
+<div class="tip" id="tip" hidden></div>
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
+const el = (n, a = {}, t) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; return e; };
+const tip = $("tip");
+function hover(node, text) {
+  node.addEventListener("pointermove", e => { tip.hidden = false; tip.textContent = text; tip.style.left = Math.min(e.clientX + 12, innerWidth - 270) + "px"; tip.style.top = (e.clientY + 14) + "px"; });
+  node.addEventListener("pointerleave", () => tip.hidden = true);
+}
+const fmt = v => Math.abs(v) >= 1000 ? v.toLocaleString("en-US") : String(+(+v).toFixed(2));
+
+function hbars(id, rows, o = {}) {           // rows: [label, value, color?, text?]
+  const W = 460, lab = o.lab || 170, rh = 26, H = rows.length * rh + 6;
+  const lo = Math.min(0, ...rows.map(r => r[1])), hi = Math.max(...rows.map(r => r[1]), 0) * 1.0;
+  const x = v => lab + (v - lo) / (hi - lo) * (W - lab - 70);
+  const s = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+  rows.forEach((r, i) => {
+    const y = i * rh + 4, a = x(Math.min(0, r[1])), b = x(Math.max(0, r[1]));
+    s.append(el("text", { x: lab - 8, y: y + 14, "text-anchor": "end" }, r[0]));
+    const bar = el("rect", { x: a, y: y + 3, width: Math.max(b - a, 1), height: 14, rx: 2, fill: r[2] || "var(--s1)" });
+    hover(bar, `${r[0]}: ${r[3] || fmt(r[1])}`); s.append(bar);
+    s.append(el("text", { x: r[1] < 0 ? a - 5 : b + 5, y: y + 14, class: "v", "text-anchor": r[1] < 0 ? "end" : "start" }, r[3] || fmt(r[1])));
+  });
+  if (lo < 0) s.append(el("line", { x1: x(0), x2: x(0), y1: 0, y2: H, stroke: "var(--muted)", "stroke-width": 1 }));
+  $(id).append(s);
+}
+function table(id, head, rows) {
+  const t = $(id); t.innerHTML = "<thead><tr>" + head.map(h => `<th>${h}</th>`).join("") + "</tr></thead><tbody>" +
+    rows.map(r => "<tr>" + r.map(c => `<td>${c == null ? "—" : c}</td>`).join("") + "</tr>").join("") + "</tbody>";
+}
+const PH = { G1: "var(--s1)", S: "var(--s2)", G2: "var(--s3)", M: "var(--s4)" };
+function lines(id, t, series, o = {}) {      // series: [{y, color, name, w}]
+  const W = o.W || 900, H = o.H || 250, m = { l: 44, r: 12, t: 8, b: 30 };
+  const all = series.flatMap(s => s.y), y0 = o.y0 ?? Math.min(...all), y1 = (o.y1 ?? Math.max(...all)) * 1.04, t0 = t[0], t1 = o.t1 || t[t.length - 1];
+  const X = v => m.l + (v - t0) / (t1 - t0) * (W - m.l - m.r), Y = v => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+  const s = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+  if (o.phase) { let a = 0; for (let i = 1; i <= t.length; i++) if (i === t.length || o.phase[i] !== o.phase[a]) {
+      s.append(el("rect", { x: X(t[a]), y: m.t, width: Math.max(X(t[Math.min(i, t.length - 1)]) - X(t[a]), 0), height: H - m.t - m.b, fill: PH[o.phase[a]], opacity: .12 })); a = i; } }
+  for (let k = 0; k <= 4; k++) { const v = y0 + (y1 - y0) * k / 4, yy = Y(v);
+    s.append(el("line", { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: "var(--grid)", "stroke-width": 1 }));
+    s.append(el("text", { x: m.l - 6, y: yy + 4, "text-anchor": "end" }, fmt(v))); }
+  const step = (t1 - t0) > 60 ? 20 : 10;
+  for (let v = Math.ceil(t0 / step) * step; v <= t1; v += step) s.append(el("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle" }, v));
+  s.append(el("text", { x: W - m.r, y: H - 2, "text-anchor": "end" }, o.xlabel || "time (h)"));
+  if (o.mark != null) s.append(el("line", { x1: X(o.mark), x2: X(o.mark), y1: m.t, y2: H - m.b, stroke: "var(--muted)", "stroke-dasharray": "2 3" }));
+  series.forEach(sr => { const tt = sr.t || t;
+    s.append(el("path", { d: sr.y.map((v, i) => (i ? "L" : "M") + X(tt[i]).toFixed(1) + " " + Y(Math.max(Math.min(v, y1), y0)).toFixed(1)).join(""), fill: "none", stroke: sr.color, "stroke-width": sr.w || 2, "stroke-linejoin": "round", opacity: sr.o || 1 })); });
+  if (!o.nohover) { const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--fg)", "stroke-width": 1, opacity: 0 }); s.append(cross);
+    const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }); s.append(hit);
+    hit.addEventListener("pointermove", e => { const r = s.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W, tv = t0 + (px - m.l) / (W - m.l - m.r) * (t1 - t0);
+      let i = 0; while (i < t.length - 1 && t[i] < tv) i++;
+      cross.setAttribute("x1", X(t[i])); cross.setAttribute("x2", X(t[i])); cross.setAttribute("opacity", .5);
+      tip.hidden = false; tip.textContent = `${t[i]} h` + (o.phase ? ` · ${o.phase[i]}` : "") + " · " + series.map(q => `${q.name}: ${fmt(q.y[i])}`).join(" · ");
+      tip.style.left = Math.min(e.clientX + 12, innerWidth - 270) + "px"; tip.style.top = (e.clientY + 14) + "px"; });
+    hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("opacity", 0); }); }
+  $(id).append(s);
+}
+
+// ---- headline numbers
+const sc = D.screen;
+$("stats").innerHTML = [[D.genes.total.toLocaleString(), "genes with expression dynamics"], [sc.functional.toLocaleString(), "expressed genes with a modelled function"],
+  [D.met_stats.reactions.toLocaleString(), "metabolic reactions"], [D.sig_stats.nodes.toLocaleString(), "signalling proteins"], [D.experiments.length, "in-silico experiments"],
+  [sc.simulated.toLocaleString(), "knock-outs simulated so far"]].map(s => `<div class="stat"><b>${s[0]}</b><span>${s[1]}</span></div>`).join("");
+
+// ---- coverage
+const order = ["kinetic module", "molecular machine", "metabolism", "signalling / regulation", "expression dynamics only", "not expressed in HeLa"];
+hbars("tiers", order.map(k => [k, D.tiers[k], k.startsWith("expression") ? "var(--s2)" : k.startsWith("not") ? "var(--idle)" : "var(--s1)", D.tiers[k].toLocaleString()]));
+hbars("prov", Object.entries(D.provenance).map(([k, v]) => [k, v, "var(--s1)", v + "%"]), { lab: 130 });
+hbars("comp", D.compartments.map(r => [r[0], r[1], "var(--s1)", r[1] + "%"]), { lab: 120 });
+table("checks", ["quantity", "model", "literature"], D.checks);
+hbars("exch", D.exchange.map(r => [r[0], r[1], r[1] < 0 ? "var(--s1)" : "var(--s2)"]), { lab: 150 });
+table("medium", ["condition", "max growth /h", "ATP capacity", "glucose in", "lactate out", "O₂ in", "glutamine in"], D.medium);
+
+// ---- heatmap
+(() => { const R = D.heat.rows, C = D.heat.cols, cw = 46, ch = 20, lx = 70, ty = 92, W = lx + C.length * cw + 4, H = ty + R.length * ch + 4;
+  const s = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+  C.forEach((c, j) => { s.append(el("text", { x: lx + j * cw + cw / 2, y: ty - 8, transform: `rotate(-40 ${lx + j * cw + cw / 2} ${ty - 8})` }, c));
+    R.forEach((r, i) => { const v = D.heat.values[c][i], a = Math.min(Math.abs(v) / 1.2, 1);
+      const base = el("rect", { x: lx + j * cw + 1, y: ty + i * ch + 1, width: cw - 2, height: ch - 2, fill: "var(--neutral)" }); s.append(base);
+      const cell = el("rect", { x: lx + j * cw + 1, y: ty + i * ch + 1, width: cw - 2, height: ch - 2, fill: v < 0 ? "var(--s1)" : "var(--s2)", opacity: a }); s.append(cell);
+      hover(cell, `${r} under ${c}: ${v > 0 ? "+" : ""}${v} log2`);
+      if (Math.abs(v) >= 0.3) s.append(el("text", { x: lx + j * cw + cw / 2, y: ty + i * ch + 14, "text-anchor": "middle", class: "v", "pointer-events": "none" }, (v > 0 ? "+" : "") + v.toFixed(1))); }); });
+  R.forEach((r, i) => s.append(el("text", { x: lx - 6, y: ty + i * ch + 14, "text-anchor": "end" }, r)));
+  $("heat").append(s); })();
+
+// ---- whole cell
+$("wtleg").innerHTML = `<span><i style="background:var(--fg)"></i>protein mass (cycle average = 1)</span><span><i style="background:var(--s2)"></i>cyclin E1</span><span><i style="background:var(--s3)"></i>cyclin B1 (concentration, own mean = 1)</span>` +
+  Object.entries(PH).map(([k, c]) => `<span><i class="sq" style="background:${c}"></i>${k}</span>`).join("");
+lines("wt", D.wt.t, [{ y: D.wt.cycE, color: "var(--s2)", name: "cyclin E1", w: 1.6 }, { y: D.wt.cycB, color: "var(--s3)", name: "cyclin B1", w: 1.6 }, { y: D.wt.size, color: "var(--fg)", name: "mass", w: 2.2 }], { phase: D.wt.phase, y0: 0 });
+lines("lin", D.lineages[0].t, D.lineages.map((l, i) => ({ t: l.t, y: l.size, color: "var(--s1)", name: "cell " + i, w: 1.3, o: .7 })), { W: 460, H: 240, y0: 0, nohover: true });
+(() => { const c = D.cycles, bins = []; for (let b = 12; b < 40; b += 2) bins.push([b, c.filter(v => v >= b && v < b + 2).length]);
+  const mean = c.reduce((a, b) => a + b, 0) / c.length, sd = Math.sqrt(c.reduce((a, b) => a + (b - mean) ** 2, 0) / c.length);
+  $("cych").textContent = `Cell-cycle times: ${mean.toFixed(1)} ± ${sd.toFixed(1)} h (n = ${c.length} divisions)`;
+  const W = 460, H = 240, m = { l: 30, b: 30, t: 8 }, mx = Math.max(...bins.map(b => b[1])), bw = (W - m.l - 8) / bins.length;
+  const s = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+  bins.forEach((b, i) => { const h = b[1] / mx * (H - m.b - m.t - 14), r = el("rect", { x: m.l + i * bw + 1, y: H - m.b - h, width: bw - 2, height: Math.max(h, 0), rx: 2, fill: "var(--s1)" });
+    hover(r, `${b[0]}–${b[0] + 2} h: ${b[1]} divisions`); s.append(r);
+    if (b[1]) s.append(el("text", { x: m.l + i * bw + bw / 2, y: H - m.b - h - 4, "text-anchor": "middle", class: "v" }, b[1]));
+    if (i % 2 === 0) s.append(el("text", { x: m.l + i * bw, y: H - m.b + 15, "text-anchor": "middle" }, b[0])); });
+  const xr = m.l + (22 - 12) / 2 * bw; s.append(el("line", { x1: xr, x2: xr, y1: m.t, y2: H - m.b, stroke: "var(--fg)", "stroke-dasharray": "3 3" }));
+  s.append(el("text", { x: xr + 5, y: m.t + 10, class: "v" }, "HeLa ≈ 22 h")); s.append(el("text", { x: W - 8, y: H - 2, "text-anchor": "end" }, "cycle time (h)"));
+  $("hist").append(s); })();
+table("bench", ["quantity", "model", "HeLa literature"], D.bench);
+
+// ---- experiments
+(() => { const wt = D.experiments.find(e => e[0] === "untreated")[3];
+  const cat = e => e[1] !== "alive" && !e[1].startsWith("cytokinesis") ? "dies" : e[3] >= wt ? "proliferates normally" : e[3] > 0 ? "slowed" : "arrested, alive";
+  const col = { "proliferates normally": "var(--good)", "slowed": "var(--warn)", "arrested, alive": "var(--idle)", "dies": "var(--bad)" };
+  const box = $("exps"); let html = "";
+  Object.keys(col).forEach(k => { const xs = D.experiments.filter(e => cat(e) === k);
+    html += `<div class="grp"><h3>${k} <span>· ${xs.length}</span></h3><div class="chips">` + xs.map(e =>
+      `<span class="chip" data-t="${e[0]}: ${e[1]}${e[1] === "alive" ? "" : " at " + e[2] + " h"}, ${e[3]} divisions, last phase ${e[4]}"><i style="background:${col[k]}"></i>${e[0]}</span>`).join("") + "</div></div>"; });
+  box.innerHTML = `<h3>Outcome after 66 h of treatment (untreated cell: ${wt} divisions)</h3>` + html;
+  box.querySelectorAll(".chip").forEach(c => hover(c, c.dataset.t)); })();
+(() => { const C = D.courses, box = $("courses"), mk = (title, leg) => { const d = document.createElement("div"); d.className = "fig"; const id = "c" + box.children.length;
+    d.innerHTML = `<h3>${title}</h3><div class="legend">${leg.map(l => `<span><i style="background:${l[1]}"></i>${l[0]}</span>`).join("")}</div><div id="${id}"></div>`; box.append(d); return id; };
+  const o = { W: 460, H: 210, mark: 6, y0: 0 };
+  lines(mk("Oligomycin: shift to glycolysis (mmol/gDW/h)", [["glucose uptake", "var(--s1)"], ["lactate secretion", "var(--s2)"]]), C.oligomycin.t, [{ y: C.oligomycin.glc, color: "var(--s1)", name: "glucose" }, { y: C.oligomycin.lac, color: "var(--s2)", name: "lactate" }], o);
+  lines(mk("Tunicamycin: ER stress and chaperone induction", [["unfolded-protein load", "var(--s1)"], ["integrated stress response", "var(--s2)"], ["BiP protein (start = 1)", "var(--s3)"]]), C.tunicamycin.t, [{ y: C.tunicamycin.U, color: "var(--s1)", name: "load" }, { y: C.tunicamycin.isr, color: "var(--s2)", name: "ISR" }, { y: C.tunicamycin.bip, color: "var(--s3)", name: "BiP" }], o);
+  lines(mk("6 Gy radiation: DNA double-strand breaks per cell", [["breaks", "var(--s1)"]]), C["radiation 6 Gy"].t, [{ y: C["radiation 6 Gy"].D, color: "var(--s1)", name: "breaks" }], o);
+  lines(mk("Paclitaxel: mitotic arrest, then caspase activation", [["caspase activation (death at 0.5)", "var(--s1)"]]), C.paclitaxel.t, [{ y: C.paclitaxel.C, color: "var(--s1)", name: "caspase" }], { ...o, t1: 48, y1: 0.55 }); })();
+table("geno", D.genotype_cols, D.genotype);
+
+// ---- screen
+(() => { const done = sc.simulated >= sc.functional, pct = Math.round(sc.simulated / sc.functional * 100);
+  $("scrh").textContent = done ? "Knock-out screen against CRISPR core-essential genes" : `Knock-out screen: ${pct}% complete, benchmark genes first`;
+  $("scrnote").textContent = (done ? "" : `Partial result. ${sc.simulated.toLocaleString()} of ${sc.functional.toLocaleString()} functional genes have been simulated; core-essential genes were queued first, so this sample is not representative of the genome and no accuracy score is reported yet. `) +
+    `Of ${sc.ceg_sim} core-essential genes simulated, the model calls ${sc.ceg_ess} essential (${Math.round(sc.ceg_ess / sc.ceg_sim * 100)}%). Of ${sc.other_sim} other genes simulated, it calls ${sc.other_ess} essential.`;
+  hbars("layers", Object.entries(sc.layers).filter(([k, v]) => v[0] > 0).map(([k, v]) => [k, Math.round(v[1] / v[0] * 100), "var(--s1)", `${Math.round(v[1] / v[0] * 100)}% (${v[1]} of ${v[0]})`]), { lab: 150 });
+  hbars("kofate", Object.entries(sc.fates).map(([k, v]) => [k === "alive" ? "alive (dividing or arrested)" : k, v, k === "alive" ? "var(--idle)" : "var(--s2)"]), { lab: 190 }); })();
+</script>
