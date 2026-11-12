@@ -29,6 +29,7 @@ EPS = 0.02
 LIGANDS = ["EGF", "IGF1", "INS", "FGF2", "PDGFB", "HGF", "TGFB1", "TNF", "IL6", "IFNG", "IL1B", "WNT3A",
            "TNFSF10", "FASLG", "VEGFA", "NRG1", "IFNB1", "CXCL12"]
 SERUM = ["EGF", "IGF1", "INS", "FGF2", "PDGFB", "HGF"]          # mitogens present in the reference medium
+TARGET_GAIN = 0.8     # log2 fold change of a target gene per unit of summed, normalised TF log2 activity
 CORE_SHARE = 0.7      # fraction of a node's input carried by its textbook-backbone regulators
 
 _CORE = """
@@ -129,6 +130,9 @@ class Signaling:
         lam = eigs(T.asfptype(), k=6, which="LR", return_eigenvectors=False, maxiter=5000, tol=1e-4)
         self.tf_loop = float(lam.real.max())
         self.gain = float(min(1.0, 0.6 / max(self.tf_loop, 1e-6)))
+        # Only the TF genes close that loop; every other target gene responds with a larger gain.
+        self.gene_gain = np.full(len(genes), TARGET_GAIN)
+        self.gene_gain[self.tf_gene[ok]] = self.gain
 
     # ------------------------------------------------------------------
     def set(self, **activity):
@@ -151,7 +155,7 @@ class Signaling:
         cv = np.fromiter(self.clamp.values(), dtype=float, count=len(self.clamp))
         for _ in range(n_iter):
             u = self.W @ (a - self.a_ref)
-            target = avail / (1.0 + np.exp(-(self.logit_ref + self.beta * u)))
+            target = avail / (1.0 + np.exp(-np.clip(self.logit_ref + self.beta * u, -50.0, 50.0)))
             target = np.where(self.is_ligand, self.a_ref, np.clip(target, 0.0, 1.0))
             target[~(self.expressed | self.is_ligand)] = 0.0
             a = a + relax * (target - a)
@@ -170,7 +174,7 @@ class Signaling:
         out = np.zeros(len(self.tfs))
         has = self.tf_node >= 0
         node = self.tf_node[has]
-        out[has] = np.where(self.a_ref[node] > 0, np.log2((self.a[node] + EPS) / (self.a_ref[node] + EPS)), 0.0)
+        out[has] = np.where(self.a_ref[node] > 0, np.log2((np.maximum(self.a[node], 0.0) + EPS) / (self.a_ref[node] + EPS)), 0.0)
         g = self.tf_gene
         only_abund = (~has) & (g >= 0)
         out[only_abund] = np.log2(np.clip(protein_rel[g[only_abund]], 0.25, 4.0))
@@ -178,5 +182,5 @@ class Signaling:
 
     def regulation(self, protein_rel: np.ndarray, gain: float | None = None) -> np.ndarray:
         """Per-gene multiplicative change of the transcription rate."""
-        gain = self.gain if gain is None else gain
+        gain = self.gene_gain if gain is None else gain
         return np.clip(2.0 ** (gain * (self.R @ self.tf_log2(protein_rel))), 0.05, 20.0)

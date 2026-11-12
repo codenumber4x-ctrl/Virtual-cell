@@ -24,6 +24,7 @@ the reference cell at the same size, so every module is at 1.0 in an unperturbed
 from __future__ import annotations
 
 import copy
+import re
 
 import numpy as np
 from scipy.optimize import brentq
@@ -46,15 +47,15 @@ DRUGS = {
     "palbociclib": ({"CDK4": 0.97, "CDK6": 0.97}, {}), "RO3306": ({"CDK1": 0.95}, {}),
     "nutlin3": ({"MDM2": 0.95}, {}), "bortezomib": ({"PSMB5": 0.95}, {}),
     "cycloheximide": ({}, {"translation_block": 0.97}), "actinomycinD": ({}, {"transcription_block": 0.97}),
-    "oligomycin": ({"ATP5F1A": 0.98, "ATP5F1B": 0.98}, {}), "rotenone": ({"NDUFS1": 0.98, "NDUFV1": 0.98}, {"ros": 1.0}),
-    "2DG": ({"HK1": 0.9, "HK2": 0.9}, {}), "methotrexate": ({"DHFR": 0.98}, {}),
+    "oligomycin": ({"re:^ATP5": 0.98, "re:^MT-ATP": 0.98}, {}), "rotenone": ({"re:^NDUF": 0.98, "re:^MT-ND": 0.98}, {"ros": 1.0}),
+    "2DG": ({"re:^HK\\d$": 0.95, "GCK": 0.95, "ADPGK": 0.95, "GPI": 0.9}, {}), "methotrexate": ({"re:^DHFR": 0.99}, {}),
     "hydroxyurea": ({"RRM1": 0.95, "RRM2": 0.95}, {"replication_stress": 1.0}),
     "5FU": ({"TYMS": 0.95}, {"replication_stress": 0.5}), "simvastatin": ({"HMGCR": 0.97}, {}),
     "etoposide": ({"TOP2A": 0.5}, {"dsb_rate": 60.0}), "doxorubicin": ({"TOP2A": 0.7}, {"dsb_rate": 80.0, "ros": 0.5}),
     "olaparib": ({"PARP1": 0.95}, {"dsb_rate": 3.0}),
     "paclitaxel": ({}, {"spindle_poison": 0.98}), "nocodazole": ({}, {"spindle_poison": 0.98}),
     "tunicamycin": ({"DPAGT1": 0.95}, {"er_stress": 1.0}), "thapsigargin": ({"ATP2A2": 0.98, "ATP2A3": 0.98}, {}),
-    "ouabain": ({"ATP1A1": 0.95}, {}), "venetoclax": ({"BCL2": 0.97}, {}), "navitoclax": ({"BCL2": 0.95, "BCL2L1": 0.95}, {}),
+    "ouabain": ({"re:^ATP1A\\d$": 0.99}, {}), "venetoclax": ({"BCL2": 0.97}, {}), "navitoclax": ({"BCL2": 0.95, "BCL2L1": 0.95}, {}),
     "S63845": ({"MCL1": 0.97}, {}), "H2O2": ({}, {"ros": 2.0}), "CB839": ({"GLS": 0.95}, {}),
     "AZD7762": ({"CHEK1": 0.95, "CHEK2": 0.9}, {}), "KU55933": ({"ATM": 0.95}, {}),
 }
@@ -133,6 +134,7 @@ class VirtualCell:
         self.phase = "G1"
         self.q = self.r = self.b = self.mprog = 0.0     # G1 commitment, replicated fraction, G2 progress, mitosis progress
         self.mitotic_h = 0.0
+        self.arrested = False
         self.generation = 0
         self.alive = True
         self.fate = "alive"
@@ -190,7 +192,8 @@ class VirtualCell:
             rb=G("RB1"), cdc25=G("CDC25A", "CDC25B", "CDC25C"), wee1=G("WEE1", "PKMYT1"), e2f=G("E2F1", "E2F2", "E2F3"),
             tp53=G("TP53"), mdm2=G("MDM2"), atm=G("ATM"), atr=G("ATR"), chk1=G("CHEK1"), chk2=G("CHEK2"),
             bax=G("BAX", "BAK1"), puma=G("BBC3"), noxa=G("PMAIP1"), bim=G("BCL2L11"),
-            anti=G("BCL2L1", "MCL1", "BCL2", "XIAP"), chop=G("DDIT3"),
+            anti=G("BCL2L1", "MCL1", "BCL2"), xiap=G("XIAP"), dr=G("TNFRSF10B", "TNFRSF10A"), fas=G("FAS"), tnfr1=G("TNFRSF1A"), fadd=G("FADD"),
+            casp8=G("CASP8"), cflar=G("CFLAR"), rtk=G("EGFR", "IGF1R", "INSR", "FGFR1", "PDGFRB", "MET"), chop=G("DDIT3"),
             apc_deg=G("CCNB1", "CCNB2", "CCNA2", "PLK1", "AURKA", "CDC20", "PTTG1"),
             scf_deg=G("CCNE1", "CCNE2", "CDT1", "CDC6", "CDC25A"),
         )
@@ -246,8 +249,13 @@ class VirtualCell:
         targets, env = DRUGS[name]
         occ = min(dose / (dose + 0.1) * 1.1, 1.0)
         for sname, frac in targets.items():
-            if sname in self.sym:
-                self.func[self.sym[sname]] = min(self.func[self.sym[sname]], 1.0 - frac * occ)
+            if sname.startswith("re:"):
+                rx = re.compile(sname[3:])
+                hit = [i for i, x in enumerate(self.symbols) if rx.match(x)]
+            else:
+                hit = [self.sym[sname]] if sname in self.sym else []
+            for i in hit:
+                self.func[i] = min(self.func[i], 1.0 - frac * occ)
         for k, v in env.items():
             self.env[k] = max(self.env[k], v * occ)
         self.drugs[name] = dose
@@ -383,7 +391,7 @@ class VirtualCell:
         if self.phase == "S":
             rs = max(rs, 1.0 - min(s["dna_cap"], 1.0))
         s["D"] += dt_h * (0.35 * (1 + 5 * ros_x) + self.env["dsb_rate"] + 15.0 * rs * (self.phase == "S")
-                          - 0.35 * repair * s["D"])
+                          - 0.35 * repair * s["D"] / (1.0 + s["D"] / 40.0))     # repair saturates at high damage
         s["D"] = max(s["D"], 0.0)
         dmg = max(0.0, s["D"] - 1.0)
         atm = dmg / (dmg + 20.0) * min(rel("atm"), 1.0)
@@ -404,7 +412,7 @@ class VirtualCell:
                      ATF6=A + (1 - A) * perk, XBP1=A + (1 - A) * perk, DDIT3=A + (1 - A) * s["isr"] ** 2,
                      NFE2L2=min(A * (1 + 2 * ros_x), 1.0), CALM1=min(A * s["Ca"] / 0.1, 1.0),
                      HSF1=A + (1 - A) * min(1.0, max(0.0, 1.0 - F["chaperones"]) + max(0.0, 1.0 - F["proteasome"])))
-        e2f_lvl = {"G1": 0.5 + 2.0 * self.q, "S": 2.5, "G2": 1.0, "M": 0.5}[self.phase]
+        e2f_lvl = {"G1": 0.5 + 2.0 * min(max(self.q, 0.0), 1.0), "S": 2.5, "G2": 1.0, "M": 0.5}[self.phase]
         g2m_lvl = {"G1": 0.6, "S": 1.0, "G2": 3.2, "M": 3.2}[self.phase]
         self.sig.set(E2F1=min(A * e2f_lvl, 1.0), E2F2=min(A * e2f_lvl, 1.0), E2F3=min(A * e2f_lvl, 1.0),
                      FOXM1=min(A * g2m_lvl, 1.0), MYBL2=min(A * g2m_lvl, 1.0))
@@ -461,11 +469,16 @@ class VirtualCell:
         # ---------------- death decisions
         # BH3-only proteins and death-receptor signalling count once they clearly exceed their noisy baseline
         bh3 = (0.5 * max(0.0, rel("puma") - 2) + 0.5 * max(0.0, rel("noxa") - 2) + 0.5 * max(0.0, rel("bim") - 2))
-        casp8 = 2.0 * max(0.0, self.sig.activity("CASP8") - 1.3)
+        # death-inducing signalling complex: ligand x receptor x FADD x caspase-8, restrained by c-FLIP
+        a = self.sig.a
+        lig = lambda name: float(a[self.sig.pos[name]]) if name in self.sig.pos else 0.0
+        disc = (lig("TNFSF10") * min(rel("dr"), 1.0) + lig("FASLG") * min(rel("fas"), 1.0)
+                + 0.2 * lig("TNF") * min(rel("tnfr1"), 1.0))
+        casp8 = 3.0 * disc * min(rel("fadd"), 1.0) * min(rel("casp8"), 1.0) / max(rel("cflar"), 0.3)
         stress = (0.2 * self.mitotic_h + 0.75 * max(0.0, rel("chop") - 3.0) + 1.0 * (1 - ec) + dmg / 200.0
                   + 0.5 * max(0.0, s["Ca"] - 1.0) + 0.5 * max(0.0, ros_x - 1.0))
         pro = min(rel("bax"), 2.0) * (1.0 + bh3 + casp8 + stress)
-        anti = max(min(rel("anti"), 3.0) * (0.7 + 0.3 * min(akt, 2.0)), 0.02)
+        anti = max(min(rel("anti"), 3.0) ** 0.8 * min(rel("xiap"), 3.0) ** 0.2 * (0.7 + 0.3 * min(akt, 2.0)), 0.02)
         ratio = pro / anti
         hill = ratio ** 4 / (39.0 + ratio ** 4)
         casp = min(F["caspases"], 1.0)
@@ -481,7 +494,7 @@ class VirtualCell:
             self._die("apoptosis")
         elif s["low_energy_h"] > 3.0:
             self._die("necrosis (energy failure)")
-        elif s["swell"] > 1.5:
+        elif s["swell"] > 1.3:
             self._die("necrosis (osmotic lysis)")
 
         self.t += self.dt
@@ -515,7 +528,10 @@ class VirtualCell:
             lp.bounds(col, 0.0, 1000.0); lp.h.changeColCost(col, -1.0)
             obj, _ = lp.solve()
             lp.h.changeColCost(col, 0.0); lp.bounds(col, 0.0, 0.0)
-            s["dna_cap"] = (-(obj or 0.0) / coef) / (4.0 * self.mu_ref)   # S phase needs ~4x the average dNTP flux
+            cap = -(obj or 0.0) / coef
+            if not hasattr(self, "dna_cap_ref"):
+                self.dna_cap_ref = max(cap, 1e-9)
+            s["dna_cap"] = cap / self.dna_cap_ref          # dNTP synthesis capacity relative to the unperturbed cell
         self.met.step_medium(self.exchange, self.met_interval / 3600.0, self.culture_gdw_per_l * size)
 
     # ------------------------------------------------------------------ cell cycle
@@ -525,15 +541,22 @@ class VirtualCell:
         cki = 1.0 + 1.5 * max(p21 - 1.0, 0.0) + 1.0 * max(p27 - 1.0, 0.0)
         chk = max(atm, atr) * min(rel("chk1"), 1.0)
         if self.phase == "G1":
-            mitogen = float(np.clip(erk * akt, 0.0, 1.3) ** 3 * np.clip(self.sig.activity("MYC"), 0.0, 1.5))
+            rtk = np.mean([self.sig.activity(x) for x in ("EGFR", "IGF1R", "INSR", "FGFR1", "PDGFRB", "MET")
+                           if x in self.sig.pos and self.sig.a_ref[self.sig.pos[x]] > 0] or [1.0])
+            mitogen = float(np.clip(erk * akt, 0.0, 1.3) ** 3 * np.clip(self.sig.activity("MYC"), 0.0, 1.5)
+                            * np.clip(rtk, 0.0, 1.3) ** 2)
             rb = min(rel("rb"), 2.0) * self.traits.get("rb_function", 1.0)
             rb_brake = (0.3 + 0.7 * rb) / (0.3 + 0.7 * self.traits.get("rb_function", 1.0))
             x = size / 0.95
             gate = min(2.0 * x ** 12 / (1.0 + x ** 12), 1.2)                 # cell-size checkpoint
-            drive = (mitogen * _sat(min(rel("cycD"), rel("cdk46"))) / cki / rb_brake * gate
+            # cyclin D-CDK4/6 is needed only to inactivate RB: without functional RB the requirement vanishes
+            cycd = 1.0 - min(rb, 1.0) * (1.0 - min(_sat(min(rel("cycD"), rel("cdk46"))), 1.0)) \
+                + 0.5 * max(min(rel("cycD"), rel("cdk46"), 3.0) - 1.0, 0.0)
+            drive = (mitogen * cycd / cki / rb_brake * gate
                      * (1 - 0.8 * atm * min(rel("chk2"), 1.0)) * _sat(min(rel("cycE"), rel("cdk2"))) ** 0.5
                      * _sat(rel("e2f")) * min(s["supply"], 1.0) * s["EC"])
-            self.q += dt_h * max(drive - 0.4, 0.0) / 0.6
+            if not self.arrested:
+                self.q += dt_h * max(drive - 0.4, 0.0) / 0.6
             s["g1_drive"] = drive
             if self.q >= 1.0 and F["licensing"] > 0.3:
                 self.phase, self.r = "S", 0.0
@@ -560,7 +583,7 @@ class VirtualCell:
                 if F["cytokinesis"] > 0.3:
                     self._divide()
                 else:                                   # cytokinesis failure: tetraploid G1 arrest
-                    self.phase, self.q, self.mitotic_h = "G1", -1e9, 0.0
+                    self.phase, self.q, self.mitotic_h, self.arrested = "G1", 0.0, 0.0, True
                     self.fate = "cytokinesis failure (tetraploid arrest)"
 
     def _degrade(self, group, keep):
@@ -621,6 +644,15 @@ class VirtualCell:
         return dict(alive=self.alive, fate=self.fate, hours=t_h, divisions=self.generation, phase=self.phase,
                     size=size, growth=np.log2(max(size, 1e-9) / LN2 * 2.0 ** self.generation) / max(t_h, 1e-9) * LN2,
                     mu_cap=self.s["mu_cap"], EC=self.s["EC"], p53=self.s["P53"] / self.p53_ref, dsb=self.s["D"])
+
+    def reset_shared(self):
+        """Return the shared metabolic / signalling models to the unperturbed reference environment."""
+        from .metabolism import MEDIUM
+        self.sig.a = self.sig.a_ref.copy()
+        self.sig.clamp = {}
+        self.met.set_medium(**{k: v[0] for k, v in MEDIUM.items()}, **{"L-lactate": 0.0})
+        self._since_met = np.inf
+        return self
 
     def clone(self, seed=None):
         """Independent copy of the molecular state that shares the (expensive) metabolic and signalling models."""

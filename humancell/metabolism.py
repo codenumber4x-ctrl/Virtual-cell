@@ -6,7 +6,7 @@ of the cell, every enzyme-catalysed reaction gets a capacity proportional to the
 abundance of its enzyme (evaluated through the gene-protein-reaction rule), calibrated on a
 reference flux state that reproduces measured growth and exchange rates:
 
-    |v_r(t)| <= cap_r * f(E_r(t) / E_r(ref)),   cap_r = max(|v_r(ref)| / SATURATION, kcat_default * E_r(ref))
+    |v_r(t)| <= cap_r * f(E_r(t) / E_r(ref)),   cap_r = |v_r(ref)| / SATURATION  (kcat_default * E_r(ref) if the reaction is idle in the reference)
     f(x) = x / RESERVE for x < RESERVE, 1 for RESERVE <= x <= 1, x for x > 1
 
 The apparent kcat implied by cap_r is an *inferred* parameter (reported, never hidden).
@@ -115,6 +115,21 @@ def _eval_gpr(node, level):
     op, a, b = node
     a, b = _eval_gpr(a, level), _eval_gpr(b, level)
     return min(a, b) if op == "and" else a + b
+
+
+def _prune_gpr(node, level):
+    """Drop complex subunits that are undetected in the reference proteome (the complex evidently works without them)."""
+    if isinstance(node, str) or node is None:
+        return node
+    op, a, b = node
+    a, b = _prune_gpr(a, level), _prune_gpr(b, level)
+    if op == "and":
+        ea, eb = _eval_gpr(a, level), _eval_gpr(b, level)
+        if ea <= 0 < eb:
+            return b
+        if eb <= 0 < ea:
+            return a
+    return (op, a, b)
 
 
 def _gpr_genes(node, out):
@@ -248,6 +263,7 @@ class Metabolism:
     def _calibrate(self):
         S, n = self.S, self.n
         prot = self.genes["protein"].to_dict()
+        self.gpr = {i: _prune_gpr(node, prot) for i, node in self.gpr.items()}
         self.E_ref = self.enzyme_levels(prot)
         off = np.array([i for i, e in self.E_ref.items() if e <= 0], dtype=int)
         self.log(f"{len(off)} of {len(self.gpr)} enzyme-catalysed reactions have no detectable enzyme")
@@ -286,7 +302,8 @@ class Metabolism:
             if i in self.closed:
                 continue
             v = abs(self.v_ref[i])
-            self.cap_ref[i] = max(v / SATURATION, KCAT_DEFAULT * (e if e > 0 else 1.0) * conv)
+            # flux-carrying reactions: capacity inferred from the reference flux; idle ones: default kcat
+            self.cap_ref[i] = v / SATURATION if v > 1e-9 else KCAT_DEFAULT * (e if e > 0 else 1.0) * conv
             if v > 1e-9 and e > 0:
                 self.kcat_app[self.ids[i]] = v / SATURATION / (e * conv)
         self.orig_lb, self.orig_ub = self.lb.copy(), self.ub.copy()
