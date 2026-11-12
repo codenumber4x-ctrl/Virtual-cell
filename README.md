@@ -89,3 +89,9 @@ A simulated day takes about 6 s deterministic, 20 s stochastic, on one core.
 * No space, no organelle dynamics, no explicit post-translational states, no epigenome.
 * Only HeLa has been run end to end; the data layer builds seven other HPA cell lines but they are untested.
 * Validation uses pan-cell-line core-essential genes; HeLa-specific DepMap scores could not be downloaded here.
+
+## 3D viewer
+
+`twin3d/` holds a three.js page that plays the simulation back as a 3D cell under nine conditions.
+`PYTHONPATH=. python3 twin3d/simulate.py` runs the model and writes `data.json`; `python3 twin3d/build.py`
+embeds it into `index.html`. Organelle geometry is schematic; the state driving it is model output.
