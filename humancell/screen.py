@@ -52,16 +52,26 @@ def _one(args):
                 phase=s["phase"], growth=float(s["growth"]), mu_cap=s["mu_cap"])
 
 
-def knockout_screen(symbols, hours: float = 72.0, processes: int = 4, dt: float = 300.0,
-                    met_interval: float = 3600.0) -> pd.DataFrame:
-    """Simulate single-gene knock-outs. Returns fitness = divisions relative to wild type (0 if the cell dies)."""
+def knockout_screen(symbols, hours: float = 48.0, processes: int = 4, dt: float = 600.0,
+                    met_interval: float = 3600.0, checkpoint: str | None = None, chunk: int = 200) -> pd.DataFrame:
+    """Simulate single-gene knock-outs. Fitness = divisions relative to wild type (0 if the cell dies).
+
+    With `checkpoint` (a CSV path) results are appended every `chunk` genes and a restarted run resumes.
+    """
+    import os
     from multiprocessing import Pool
     kw = dict(dt=dt, met_interval=met_interval)
-    jobs = [((s,) if isinstance(s, str) else tuple(s), hours) for s in symbols]
+    done = pd.read_csv(checkpoint) if checkpoint and os.path.exists(checkpoint) else pd.DataFrame()
+    seen = set(done["gene"]) if len(done) else set()
+    todo = [s for s in symbols if (s if isinstance(s, str) else "+".join(s)) not in seen]
     with Pool(processes, initializer=_init, initargs=(kw,)) as pool:
         wt = pool.apply(_one, (((), hours),))
-        rows = pool.map(_one, jobs, chunksize=4)
-    df = pd.DataFrame(rows)
-    df["fitness"] = np.where(df["alive"], np.minimum(df["divisions"] / max(wt["divisions"], 1), 1.0), 0.0)
-    df.attrs["wild_type"] = wt
-    return df
+        for i in range(0, len(todo), chunk):
+            jobs = [((s,) if isinstance(s, str) else tuple(s), hours) for s in todo[i:i + chunk]]
+            df = pd.DataFrame(pool.map(_one, jobs, chunksize=4))
+            df["fitness"] = np.where(df["alive"], np.minimum(df["divisions"] / max(wt["divisions"], 1), 1.0), 0.0)
+            done = pd.concat([done, df], ignore_index=True)
+            if checkpoint:
+                done.to_csv(checkpoint, index=False)
+    done.attrs["wild_type"] = wt
+    return done

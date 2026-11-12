@@ -2,9 +2,9 @@
 # # 6 · Validation against genome-wide CRISPR essentiality
 #
 # The strongest genome-wide test available for a cell model: delete each gene, ask whether the cell still
-# proliferates, and compare with pooled CRISPR screens. `run_screen.py` simulated a 72 h knock-out of **every
-# expressed gene with a modelled function** (deterministic mode, about 1.5 h on 4 cores). Fitness = divisions
-# relative to wild type, 0 if the cell dies.
+# proliferates, and compare with pooled CRISPR screens. `run_screen.py` simulates a 48 h knock-out of **every
+# expressed gene with a modelled function** (deterministic mode, 10 min steps, about 1.5 h on 4 cores).
+# Fitness = divisions relative to wild type (two in 48 h), 0 if the cell dies.
 #
 # Reference sets: Hart et al. core-essential genes (CEGv2, essential in nearly all human cell lines) and
 # non-essential genes (NEGv1). DepMap's per-cell-line HeLa scores could not be downloaded in this environment
@@ -27,6 +27,8 @@ T["fate"] = ko["fate"].reindex(T.index).fillna("not simulated (no modelled funct
 T["protein"] = g.drop_duplicates("symbol").set_index("symbol")["protein"].reindex(T.index)
 T["essential_pred"] = T.fitness < 0.5
 T["CEG"], T["NEG"] = T.index.isin(ceg), T.index.isin(neg)
+n_fun = int((mf.expressed & mf.any_function).sum())
+print(f"screen coverage: {len(ko):,} of {n_fun:,} functional genes simulated ({len(ko) / n_fun:.0%})")
 print(f"{len(ko):,} knock-outs simulated; {int(T.essential_pred.sum()):,} predicted essential "
       f"({int((ko.fitness == 0).sum()):,} lethal or fully arrested)")
 ko.fate.str.replace(r" \(.*", "", regex=True).value_counts().to_frame("simulated knock-outs")
